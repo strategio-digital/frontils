@@ -173,3 +173,7 @@ const thumbs = useContentioThumbnails(onCreated, apiUri)
 
 thumbs.registerEvents()
 ```
+
+```html
+<img data-thumb src="https://cdn.contentio.app/{$thumb->getSrc()}">
+```
