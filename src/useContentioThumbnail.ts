@@ -23,7 +23,7 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
     }
 
     function replacePath(src: string): string {
-        return src.replace(replaceDomain(src), '');
+        return src.replace(replaceDomain(src), '')
     }
 
     function extractParams(src: string): Params | null {
@@ -55,7 +55,7 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
         return Array.from(nodes).filter(node => node.src === src)
     }
 
-    async function getThumbnail(src: string, params: Params): Promise<void> {
+    async function loadThumbnail(src: string, params: Params): Promise<void> {
         const sameImages = getImagesBySameSrc(src)
 
         try {
@@ -74,25 +74,32 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
         if (onCreated) onCreated(params, src)
     }
 
-
     function registerEvents() {
-        document.querySelectorAll('img[data-thumb]').forEach((node) => {
-            node.addEventListener('error', async (e) => {
-                const target = e.target as HTMLImageElement
-                if (target.tagName !== 'IMG') return
+        window.addEventListener('error', async ({ target}) => {
+            // Zkontroluje, jestli chyba pochází z načítání zdrojů
+            if (target !== window) {
+                // @ts-ignore
+                const source: string = target.src || target.href
+                if (! source.startsWith('https://cdn.contentio.app/')) return
 
-                if (requestQueue.filter(src => target.src === src).length !== 0) return
-                requestQueue.push(target.src)
+                if (requestQueue.filter(src => source === src).length !== 0) return
+                requestQueue.push(source)
 
-                const params = extractParams(target.src)
+                const params = extractParams(source)
                 if (! params) return
 
-                await getThumbnail(target.src, params)
-            })
-        })
+                await loadThumbnail(source, params)
+            }
+        }, true) // Použití 'true' pro zachycení chyby v fázi capture
     }
 
     return {
-        registerEvents
+        registerEvents,
+        replaceDomain,
+        replacePath,
+        extractParams,
+        getImagesBySameSrc,
+        loadThumbnail,
+        requestQueue
     }
 }

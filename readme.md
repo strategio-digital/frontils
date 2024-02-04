@@ -171,9 +171,16 @@ function onCreated(params, src) { console.log(params, src) }
 const apiUri = 'https://<project>.contentio.app/api'
 const thumbs = useContentioThumbnails(onCreated, apiUri)
 
-thumbs.registerEvents()
+thumbs.registerEvents() // register auto-creation of thumbnails
+thumbs.replaceDomain(src) // return string
+thumbs.replacePath(src) // return string
+thumbs.extractParams(src) // return Params or null
+thumbs.getImagesBySameSrc(src) // return HTMLImageElement[]
+thumbs.loadThumbnail(src, params) // return void & invoe onCreated callback
+thumbs.requestQueue // return string[]
 ```
 
 ```html
-<img data-thumb src="https://cdn.contentio.app/{$thumb->getSrc()}">
+<!-- Works only with src or href prefix: https://cdn.contentio.app/ -->
+<img src="https://cdn.contentio.app/{$thumb->getSrc()}">
 ```
