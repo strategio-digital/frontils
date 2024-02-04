@@ -1,7 +1,8 @@
 {
     "name": "megio-frontils",
     "private": false,
-    "version": "0.0.5",
+    "version": "0.0.6",
+    "license": "MIT",
     "type": "module",
     "main": "./dist/megio-frontils.umd.cjs",
     "module": "./dist/megio-frontils.js",
