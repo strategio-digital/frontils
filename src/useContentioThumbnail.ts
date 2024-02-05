@@ -66,7 +66,13 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
 
             if (! resp.success) return
 
-            sameImages.map(node => node.src = replacePath(src) + resp.data.path)
+            sameImages.map(el => {
+                const copy = el.cloneNode(true) as HTMLImageElement
+                const source = replacePath(src) + resp.data.path
+                el.parentNode?.insertBefore(copy, el.nextSibling)
+                el.remove()
+                copy.src = source
+            })
         } catch (e) {
             console.error(e)
         }
@@ -88,9 +94,12 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
                 const params = extractParams(source)
                 if (! params) return
 
-                await loadThumbnail(source, params)
+                loadThumbnail(source, params)
             }
         }, true) // Použití 'true' pro zachycení chyby v fázi capture
+
+        const els: HTMLImageElement[] = Array.from(document.querySelectorAll('img[data-src]'))
+        els.forEach(el => el.src = el.getAttribute('data-src') as string)
     }
 
     return {
