@@ -12,10 +12,9 @@ interface IOnCreated {
     (params: Params, src: string): void
 }
 
-export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | null = null) => {
+export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | null = null, selector: string = 'img[data-src]') => {
 
     const api = useContentioApi(apiUri)
-
     const requestQueue: string[] = []
 
     function replaceDomain(src: string): string {
@@ -51,7 +50,7 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
     }
 
     function getImagesBySameSrc(src: string): HTMLImageElement[] {
-        const nodes: NodeListOf<HTMLImageElement> = document.querySelectorAll('img[data-thumb]')
+        const nodes: NodeListOf<HTMLImageElement> = document.querySelectorAll(selector)
         return Array.from(nodes).filter(node => node.src === src)
     }
 
@@ -66,13 +65,7 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
 
             if (! resp.success) return
 
-            sameImages.map(el => {
-                const copy = el.cloneNode(true) as HTMLImageElement
-                const source = replacePath(src) + resp.data.path
-                el.parentNode?.insertBefore(copy, el.nextSibling)
-                el.remove()
-                copy.src = source
-            })
+            sameImages.map(el => el.src = replacePath(src) + resp.data.path)
         } catch (e) {
             console.error(e)
         }
@@ -81,12 +74,12 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
     }
 
     function registerEvents() {
-        window.addEventListener('error', async ({ target}) => {
-            // Zkontroluje, jestli chyba pochází z načítání zdrojů
-            if (target !== window) {
-                // @ts-ignore
-                const source: string = target.src || target.href
-                if (! source.startsWith('https://cdn.contentio.app/')) return
+        window.addEventListener('error', async ({ target, error }) => {
+            if (target instanceof HTMLImageElement) {
+                const source: string = target.src
+                if (! source.startsWith('https://cdn.contentio.app/')) {
+                    throw error
+                }
 
                 if (requestQueue.filter(src => source === src).length !== 0) return
                 requestQueue.push(source)
@@ -98,7 +91,8 @@ export const useContentioThumbnail = (onCreated?: IOnCreated, apiUri: string | n
             }
         }, true) // Použití 'true' pro zachycení chyby v fázi capture
 
-        const els: HTMLImageElement[] = Array.from(document.querySelectorAll('img[data-src]'))
+        // Bez lazy loadingu prohlížeč může načíst obrázeky předtím, než se stihne zachytit chyba pomocí JS
+        const els: HTMLImageElement[] = Array.from(document.querySelectorAll(selector))
         els.forEach(el => el.src = el.getAttribute('data-src') as string)
     }
 
